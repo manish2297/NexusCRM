@@ -18,7 +18,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.NexusCRM"
+      "package": "com.nexuscrm.android"
     },
     "web": {
       "output": "static",

@@ -1,56 +1,75 @@
-# Welcome to your Expo app 👋
+# Nexus CRM 🌌
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A premium, high-fidelity universal mobile CRM designed for managing key pipeline accounts, deal valuations, and automated relationship follow-ups. Built on **React Native** and **Expo (SDK 56)**, featuring a glassmorphic dark-mode design, smooth visual SVG charting, and an action-oriented client outreach engine.
 
-## Get started
+---
 
-1. Install dependencies
+## 🌟 Key Features
 
-   ```bash
-   npm install
-   ```
+### 1. Command Dashboard & Pipeline Trend Analytics
+*   **Dynamic Visual Charts**: Real-time sales pipeline bezier curve growth trend and deal stage allocation bar segments rendered via high-end linear gradients and SVG markers.
+*   **VVIP Deal Room**: Highlights high-value active prospects (deals over $50k) automatically in a dedicated glassmorphic cockpit.
+*   **Operational Metrics**: Real-time closed won revenue tracking, conversion win-rates, active deal volume metrics, and pipeline ratios.
 
-2. Start the app
+### 2. Operational Follow-Up Radar 📡
+*   **Automated Target Tracking**: Active accounts that require outreach are automatically captured based on a `nextFollowUp` parameter.
+*   **Status Badging**: Clean, color-coded glows indicating relationship health:
+    *   `⚠️ Overdue Follow-up` (Crimson Alert)
+    *   `📅 Follow-up Today` (Amber Highlight)
+    *   `🕒 Scheduled: MM/DD` (Teal Indicator)
+*   **One-Tap Done**: Satisfying quick actions directly on the Dashboard that simulate calls or emails, automatically write a CRM audit trail entry, and reschedule the next check-in +7 days out, instantly sliding the client off the radar.
 
-   ```bash
-   npx expo start
-   ```
+### 3. Comprehensive Lead Lifecycle
+*   **Add & Edit Wizards**: Interactive forms with advanced controls for deal valuations, acquisition sources, initial stages, and follow-up deadlines.
+*   **Audited Interaction Trail**: Log custom call, email, or meeting events to a historical audit timeline. Rescheduling follow-ups or modifying pipeline values automatically commits structured event cards to the audit trail.
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🏗️ Navigation Architecture
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+The app is built utilizing a production-grade **Stack-over-Tabs** Expo Router file system structure:
+*   **`/`**: Dashboard (tab screen) located at `src/app/(tabs)/index.tsx`.
+*   **`/leads`**: Accounts Directory (tab screen) located at `src/app/(tabs)/leads.tsx`.
+*   **`/tasks`**: Operational Planner (tab screen) located at `src/app/(tabs)/tasks.tsx`.
+*   **`/lead/add`**: Add Lead Form (stacked modal overlay) located at `src/app/lead/add.tsx`.
+*   **`/lead/[id]`**: Interactive Prospect Profiles (stacked details view) located at `src/app/lead/[id].tsx`.
+*   **`/lead/edit/[id]`**: Modifier wizard located at `src/app/lead/edit/[id].tsx`.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 🚀 Getting Started
 
+### 1. Install Dependencies
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Run the App
+Start the Metro bundler and compile native client assets:
 
-### Other setup steps
+*   **Android (Emulator or USB Debugging)**:
+    ```bash
+    npm run android
+    ```
+*   **iOS (Simulator)**:
+    ```bash
+    npm run ios
+    ```
+*   **Web Console**:
+    ```bash
+    npm run web
+    ```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### 3. Build & Type Verification
+To perform complete static type checking:
+```bash
+npx tsc --noEmit
+```
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🛠️ Technology Stack
+*   **Framework**: Expo SDK 56 & React Native
+*   **Routing**: File-based routing via `expo-router` with experimental Native Platform Tab Bars (`expo-router/unstable-native-tabs`).
+*   **Graphics**: Native SVG parsing via `react-native-svg`.
+*   **Styling**: Glassmorphism, tailored curated gradients, and harmony-color design system defined in `src/constants/theme.ts`.

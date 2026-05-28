@@ -1,26 +1,50 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Premium design system colors and layout constants for the CRM app.
  */
 
+// @ts-ignore
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#0F172A',
+    background: '#F8FAFC',
+    backgroundElement: 'rgba(255, 255, 255, 0.75)',
+    backgroundSelected: '#E2E8F0',
+    textSecondary: '#64748B',
+    border: 'rgba(15, 23, 42, 0.08)',
+    primary: '#4FACFE',
+    secondary: '#8B5CF6',
+    accent: '#00F2FE',
+    cardBg: 'rgba(255, 255, 255, 0.7)',
+    
+    // Status colors
+    statusNew: '#3B82F6',       // Blue
+    statusContacted: '#F59E0B', // Amber
+    statusProposal: '#8B5CF6',  // Violet
+    statusWon: '#10B981',       // Emerald
+    statusLost: '#EF4444',      // Red
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#F8FAFC',
+    background: '#07090E', // Extra deep space black-blue
+    backgroundElement: 'rgba(30, 41, 59, 0.55)', // Semi-transparent glass card base
+    backgroundSelected: 'rgba(255, 255, 255, 0.12)',
+    textSecondary: '#94A3B8', // Sleek slate gray
+    border: 'rgba(255, 255, 255, 0.09)', // Subtle glassmorphic highlight border
+    primary: '#4FACFE', // Neon blue start
+    secondary: '#8B5CF6', // Royal violet
+    accent: '#00F2FE', // Neon cyan
+    cardBg: 'rgba(15, 23, 42, 0.65)', // Sleek dark card back
+    
+    // Status colors
+    statusNew: '#60A5FA',       // Bright Sky Blue
+    statusContacted: '#FBBF24', // Electric Gold/Amber
+    statusProposal: '#A78BFA',  // Neon Purple
+    statusWon: '#34D399',       // Glowing Emerald
+    statusLost: '#F87171',      // Vivid Crimson
   },
 } as const;
 
@@ -28,13 +52,9 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "MyCRM",
-    "slug": "MyCRM",
+    "name": "NexusCRM",
+    "slug": "NexusCRM",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mycrm",
+    "scheme": "nexuscrm",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -18,7 +18,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.MyCRM"
+      "package": "com.anonymous.NexusCRM"
     },
     "web": {
       "output": "static",

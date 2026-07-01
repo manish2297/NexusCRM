@@ -3,6 +3,7 @@ import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
+import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
 import MetricCard from '@/components/MetricCard';
 import CRMChart from '@/components/CRMChart';
@@ -15,6 +16,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   
   const { leads, metrics, updateLead, addTimelineNote } = useCRM();
+  const { logout } = useAuth();
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -133,7 +135,33 @@ export default function DashboardScreen() {
         {/* Header Section */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={[styles.brandTitle, { color: theme.primary }]}>NEXUS CRM</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={[styles.brandTitle, { color: theme.primary }]}>NEXUS CRM</Text>
+              <Pressable
+                onPress={() => {
+                  const performLogout = () => {
+                    logout();
+                  };
+                  if (Platform.OS === 'web') {
+                    if (confirm('Are you sure you want to log out?')) {
+                      performLogout();
+                    }
+                  } else {
+                    Alert.alert(
+                      'Logout Confirmation',
+                      'Are you sure you want to log out of Nexus CRM?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Logout', style: 'destructive', onPress: performLogout }
+                      ]
+                    );
+                  }
+                }}
+                style={({ pressed }) => [styles.logoutHeaderBtn, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={[styles.logoutHeaderText, { color: theme.statusLost }]}>[LOGOUT]</Text>
+              </Pressable>
+            </View>
             <Text style={[styles.greetingText, { color: theme.text }]}>Command Dashboard</Text>
           </View>
           <Pressable
@@ -647,5 +675,14 @@ const styles = StyleSheet.create({
     color: '#07090E',
     fontSize: 11,
     fontWeight: '900',
+  },
+  logoutHeaderBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  logoutHeaderText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

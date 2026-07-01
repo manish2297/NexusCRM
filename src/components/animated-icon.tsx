@@ -40,7 +40,9 @@ export function AnimatedSplashOverlay() {
         }
       })}
       style={styles.backgroundSolidColor}
-    />
+    >
+      <AnimatedIcon />
+    </Animated.View>
   );
 }
 
@@ -125,8 +127,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   backgroundSolidColor: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#208AEF',
     zIndex: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

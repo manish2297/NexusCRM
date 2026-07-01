@@ -13,8 +13,8 @@ export default function TasksScreen() {
   
   const { tasks, leads, addTask, toggleTask, deleteTask } = useCRM();
 
-  // Active list category: pending or completed
-  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
+  // Focus category tabs: 'today' | 'overdue' | 'upcoming' | 'completed'
+  const [activeTab, setActiveTab] = useState<'today' | 'overdue' | 'upcoming' | 'completed'>('today');
 
   // Inline Quick Task Creator Form States
   const [showAddForm, setShowAddForm] = useState(false);
@@ -23,11 +23,30 @@ export default function TasksScreen() {
   const [selectedLeadId, setSelectedLeadId] = useState(leads[0]?.id || '');
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const filteredTasks = tasks.filter(task => {
-    return activeTab === 'pending' ? !task.completed : task.completed;
-  });
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  const pendingCount = tasks.filter(t => !t.completed).length;
+  const overdueTasks = tasks.filter(t => !t.completed && t.dueDate < todayStr);
+  const todayTasks = tasks.filter(t => !t.completed && t.dueDate === todayStr);
+  const upcomingTasks = tasks.filter(t => !t.completed && t.dueDate > todayStr);
+  const completedTasks = tasks.filter(t => t.completed);
+
+  const overdueCount = overdueTasks.length;
+  const todayCount = todayTasks.length;
+  const upcomingCount = upcomingTasks.length;
+  const completedCount = completedTasks.length;
+
+  const filteredTasks = React.useMemo(() => {
+    switch (activeTab) {
+      case 'overdue': return overdueTasks;
+      case 'today': return todayTasks;
+      case 'upcoming': return upcomingTasks;
+      case 'completed': return completedTasks;
+    }
+  }, [activeTab, tasks, todayStr]);
+
+  const completionRate = tasks.length > 0 
+    ? Math.round((completedCount / tasks.length) * 100) 
+    : 0;
 
   const handleCreateTask = () => {
     if (!description.trim()) return;
@@ -72,7 +91,7 @@ export default function TasksScreen() {
           <View>
             <Text style={[styles.title, { color: theme.text }]}>Actions &amp; Planner</Text>
             <Text style={[styles.subText, { color: theme.textSecondary }]}>
-              {pendingCount} operations currently pending execution
+              {todayCount + overdueCount} focus tasks for today
             </Text>
           </View>
           <Pressable
@@ -89,13 +108,33 @@ export default function TasksScreen() {
         {/* Tab Selection */}
         <View style={[styles.tabsWrapper, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <Pressable
-            onPress={() => setActiveTab('pending')}
+            onPress={() => setActiveTab('overdue')}
             style={[
               styles.tabBtn,
-              activeTab === 'pending' && { backgroundColor: theme.backgroundSelected }
+              activeTab === 'overdue' && { backgroundColor: theme.backgroundSelected }
             ]}>
-            <Text style={[styles.tabText, { color: activeTab === 'pending' ? theme.text : theme.textSecondary }]}>
-              Pending ({pendingCount})
+            <Text style={[styles.tabText, { color: activeTab === 'overdue' ? theme.statusLost : theme.textSecondary, fontSize: 10 }]}>
+              Overdue ({overdueCount})
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setActiveTab('today')}
+            style={[
+              styles.tabBtn,
+              activeTab === 'today' && { backgroundColor: theme.backgroundSelected }
+            ]}>
+            <Text style={[styles.tabText, { color: activeTab === 'today' ? theme.text : theme.textSecondary, fontSize: 10 }]}>
+              Today ({todayCount})
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setActiveTab('upcoming')}
+            style={[
+              styles.tabBtn,
+              activeTab === 'upcoming' && { backgroundColor: theme.backgroundSelected }
+            ]}>
+            <Text style={[styles.tabText, { color: activeTab === 'upcoming' ? theme.text : theme.textSecondary, fontSize: 10 }]}>
+              Upcoming ({upcomingCount})
             </Text>
           </Pressable>
           <Pressable
@@ -104,8 +143,8 @@ export default function TasksScreen() {
               styles.tabBtn,
               activeTab === 'completed' && { backgroundColor: theme.backgroundSelected }
             ]}>
-            <Text style={[styles.tabText, { color: activeTab === 'completed' ? theme.text : theme.textSecondary }]}>
-              Completed ({tasks.length - pendingCount})
+            <Text style={[styles.tabText, { color: activeTab === 'completed' ? theme.text : theme.textSecondary, fontSize: 10 }]}>
+              Done ({completedCount})
             </Text>
           </Pressable>
         </View>
@@ -120,6 +159,24 @@ export default function TasksScreen() {
         ]}>
         
         <View style={styles.listWrapper}>
+
+          {/* Sales Agent Productivity Progress Card */}
+          <GlassCard style={styles.agendaCard} gradient>
+            <View style={styles.agendaHeader}>
+              <Text style={[styles.agendaTitle, { color: theme.text }]}>Today&apos;s Close Agenda</Text>
+              <Text style={[styles.agendaRatio, { color: theme.primary }]}>{completedCount}/{tasks.length} Completed</Text>
+            </View>
+            <View style={[styles.progressBack, { backgroundColor: theme.border }]}>
+              <View style={[styles.progressFront, { backgroundColor: theme.primary, width: `${completionRate}%` }]} />
+            </View>
+            <Text style={[styles.agendaSub, { color: theme.textSecondary }]}>
+              {overdueCount > 0 
+                ? `⚠️ Critical outreach delay: ${overdueCount} accounts are overdue. Clear these now!` 
+                : todayCount > 0 
+                ? `You have ${todayCount} follow-ups scheduled for today. Let's close them!` 
+                : `Great job! Your schedule is clear. Let's focus on prospect exploration.`}
+            </Text>
+          </GlassCard>
 
           {/* 1. Inline Glassmorphic Task Creator */}
           {showAddForm && (
@@ -285,9 +342,9 @@ export default function TasksScreen() {
             <View style={[styles.emptyCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <Text style={[styles.emptyTitle, { color: theme.text }]}>All set!</Text>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {activeTab === 'pending' 
-                  ? 'No tasks are currently pending. Go grab a coffee or click "+ PLAN" to add one!'
-                  : 'Completed tasks will be recorded here for historical auditing.'}
+                {activeTab === 'completed' 
+                  ? 'Completed tasks will be recorded here for historical auditing.'
+                  : `No tasks are currently pending in the ${activeTab} agenda.`}
               </Text>
             </View>
           )}
@@ -541,5 +598,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  agendaCard: {
+    marginVertical: 10,
+    padding: 16,
+    borderRadius: 16,
+  },
+  agendaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  agendaTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  agendaRatio: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  progressBack: {
+    height: 8,
+    borderRadius: 4,
+    width: '100%',
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  progressFront: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  agendaSub: {
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

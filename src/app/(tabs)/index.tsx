@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, Alert } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
@@ -7,15 +7,102 @@ import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/th
 import MetricCard from '@/components/MetricCard';
 import CRMChart from '@/components/CRMChart';
 import LeadCard from '@/components/LeadCard';
+import GlassCard from '@/components/GlassCard';
 
 export default function DashboardScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'light' ? 'light' : 'dark'];
   const insets = useSafeAreaInsets();
   
-  const { leads, metrics, updateLead } = useCRM();
+  const { leads, metrics, updateLead, addTimelineNote } = useCRM();
 
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // AI Co-Pilot Recommendation Engine
+  const copilotRecommendations = React.useMemo(() => {
+    const list: {
+      id: string;
+      leadId: string;
+      leadName: string;
+      type: 'no_followup' | 'stale' | 'overdue';
+      title: string;
+      description: string;
+      actionText: string;
+      onAction: () => void;
+    }[] = [];
+
+    const activeLeads = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost');
+    
+    // 1. Overdue outreach
+    activeLeads.forEach(l => {
+      if (l.nextFollowUp && l.nextFollowUp < todayStr) {
+        list.push({
+          id: `rec-overdue-${l.id}`,
+          leadId: l.id,
+          leadName: l.name,
+          type: 'overdue',
+          title: `Overdue outreach for ${l.name}`,
+          description: `Follow-up was scheduled on ${l.nextFollowUp}. Reach out and log it now.`,
+          actionText: '☏ Call Now',
+          onAction: () => {
+            router.push({ pathname: '/lead/[id]', params: { id: l.id } });
+          }
+        });
+      }
+    });
+
+    // 2. High-value lead without follow-up date
+    activeLeads.forEach(l => {
+      if (l.value >= 50000 && !l.nextFollowUp) {
+        list.push({
+          id: `rec-followup-${l.id}`,
+          leadId: l.id,
+          leadName: l.name,
+          type: 'no_followup',
+          title: `Set Follow-up for ${l.name}`,
+          description: `High-value deal ($${l.value.toLocaleString()}) has no future follow-up scheduled.`,
+          actionText: '📅 Schedule (+7d)',
+          onAction: () => {
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            const nextWeekStr = nextWeek.toISOString().split('T')[0];
+            updateLead(l.id, { nextFollowUp: nextWeekStr });
+            if (Platform.OS === 'web') {
+              alert(`Follow-up scheduled for ${l.name} on ${nextWeekStr}!`);
+            } else {
+              Alert.alert('Scheduled', `Follow-up scheduled for ${l.name} on ${nextWeekStr}.`);
+            }
+          }
+        });
+      }
+    });
+
+    // 3. Stale lead (no updates in 5 days)
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const fiveDaysAgoStr = fiveDaysAgo.toISOString();
+
+    activeLeads.forEach(l => {
+      const lastEvent = l.timeline.length > 0 ? l.timeline[l.timeline.length - 1] : null;
+      const refDate = lastEvent ? lastEvent.date : l.createdAt;
+      if (refDate < fiveDaysAgoStr) {
+        list.push({
+          id: `rec-stale-${l.id}`,
+          leadId: l.id,
+          leadName: l.name,
+          type: 'stale',
+          title: `Re-engage ${l.name}`,
+          description: `No activity recorded for 5 days. Keep the conversation going!`,
+          actionText: '⚡ Pitch Helper',
+          onAction: () => {
+            router.push({ pathname: '/lead/[id]', params: { id: l.id } });
+          }
+        });
+      }
+    });
+
+    return list;
+  }, [leads, todayStr, updateLead]);
 
   // Radar for active prospects requiring manual outreach today or in the past
   const followUpRadarLeads = leads.filter(l => {
@@ -61,6 +148,63 @@ export default function DashboardScreen() {
             ]}>
             <Text style={styles.addButtonText}>+ ADD LEAD</Text>
           </Pressable>
+        </View>
+
+        {/* AI Co-Pilot Recommendation Center */}
+        <View style={styles.copilotSection}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.copilotTitleWrapper}>
+              <View style={styles.pulseDot} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>AI Sales Co-Pilot</Text>
+            </View>
+            <Text style={[styles.copilotBadge, { backgroundColor: theme.primary + '15', color: theme.primary }]}>
+              {copilotRecommendations.length} ACTIONS
+            </Text>
+          </View>
+          
+          {copilotRecommendations.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.copilotScrollContent}
+              style={styles.copilotScrollView}
+            >
+              {copilotRecommendations.map(rec => (
+                <GlassCard key={rec.id} style={styles.copilotCard} gradient>
+                  <View style={styles.copilotCardHeader}>
+                    <Text style={[styles.copilotTypeTag, { 
+                      color: rec.type === 'overdue' ? theme.statusLost : rec.type === 'no_followup' ? theme.statusNew : theme.statusContacted,
+                      backgroundColor: (rec.type === 'overdue' ? theme.statusLost : rec.type === 'no_followup' ? theme.statusNew : theme.statusContacted) + '15'
+                    }]}>
+                      {rec.type === 'overdue' ? '⚠️ OVERDUE' : rec.type === 'no_followup' ? '📅 PIPELINE WARM' : '⚡ STALE DEAL'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.copilotCardTitle, { color: theme.text }]} numberOfLines={1}>
+                    {rec.title}
+                  </Text>
+                  <Text style={[styles.copilotCardDesc, { color: theme.textSecondary }]} numberOfLines={2}>
+                    {rec.description}
+                  </Text>
+                  <Pressable
+                    onPress={rec.onAction}
+                    style={({ pressed }) => [
+                      styles.copilotActionBtn,
+                      { backgroundColor: theme.primary },
+                      pressed && styles.buttonPressed
+                    ]}
+                  >
+                    <Text style={styles.copilotActionText}>{rec.actionText}</Text>
+                  </Pressable>
+                </GlassCard>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.emptyCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border, borderStyle: 'dashed', paddingVertical: 18 }]}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary, fontSize: 12 }]}>
+                🤖 All quiet. The pipeline is fully updated and optimized!
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Dynamic Metric Grid */}
@@ -126,10 +270,16 @@ export default function DashboardScreen() {
                   title = 'Follow-up Call Completed';
                   description = 'Outbound call executed via radar. Connection established.';
                   type = 'call';
+                  Linking.openURL(`tel:${lead.phone}`).catch(err => {
+                    console.log('Unable to open native dialer:', err);
+                  });
                 } else if (method === 'email') {
                   title = 'Follow-up Email Dispatched';
                   description = 'Relationship email dispatched via radar. Tracking enabled.';
                   type = 'email';
+                  Linking.openURL(`mailto:${lead.email}`).catch(err => {
+                    console.log('Unable to open native email client:', err);
+                  });
                 } else {
                   title = 'Standard Check-in Completed';
                   description = 'Standard client check-in registered via Pipeline Radar.';
@@ -139,6 +289,7 @@ export default function DashboardScreen() {
                 updateLead(lead.id, {
                   nextFollowUp: nextDateStr,
                 });
+                addTimelineNote(lead.id, title, description, type);
 
                 if (Platform.OS === 'web') {
                   alert(`Successfully followed up with ${lead.name}! Next follow-up scheduled for ${nextDateStr}.`);
@@ -215,7 +366,7 @@ export default function DashboardScreen() {
           ) : (
             <View style={[styles.emptyCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                No high-value active prospects. Use "+ ADD LEAD" to populate your pipeline.
+                No high-value active prospects. Use &quot;+ ADD LEAD&quot; to populate your pipeline.
               </Text>
             </View>
           )}
@@ -405,6 +556,94 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   radarCtaText: {
+    color: '#07090E',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  copilotSection: {
+    marginVertical: 12,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 4,
+  },
+  copilotTitleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+  },
+  copilotBadge: {
+    fontSize: 9,
+    fontWeight: '900',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    letterSpacing: 0.5,
+  },
+  copilotScrollView: {
+    marginHorizontal: -Spacing.three,
+    paddingHorizontal: Spacing.three,
+  },
+  copilotScrollContent: {
+    gap: 12,
+    paddingRight: 32,
+    paddingBottom: 8,
+    flexDirection: 'row',
+  },
+  copilotCard: {
+    width: 260,
+    marginVertical: 4,
+    padding: 12,
+    borderRadius: 14,
+  },
+  copilotCardHeader: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  copilotTypeTag: {
+    fontSize: 8,
+    fontWeight: '800',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    letterSpacing: 0.5,
+  },
+  copilotCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  copilotCardDesc: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginBottom: 10,
+    height: 30,
+  },
+  copilotActionBtn: {
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00F2FE',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  copilotActionText: {
     color: '#07090E',
     fontSize: 11,
     fontWeight: '900',

@@ -1,10 +1,60 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, TextInput, Alert } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, TextInput, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
 import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
+
+// Outreach templates dictionary based on deal status
+const salesScripts: Record<string, Array<{ title: string; body: string }>> = {
+  New: [
+    {
+      title: 'Cold Call Hook',
+      body: `Hi, this is [Name] calling. I noticed your team is scaling operations. We help companies increase close rates by 25% with automated workflows. Do you have 3 minutes to see if we're a fit?`,
+    },
+    {
+      title: 'Intro Email Pitch',
+      body: `Subject: Enhancing operations...\n\nHi,\n\nI was reviewing your company's profile. We help firms deploy secure, real-time analytics platforms with zero downtime.\n\nCould we set up a quick 10-minute call next Tuesday at 10 AM?\n\nBest,\n[Your Name]`,
+    }
+  ],
+  Contacted: [
+    {
+      title: 'Discovery Follow-up',
+      body: `Hi, great speaking with you earlier. Just to recap: your primary challenges are security scaling and integration overhead. I suggest a customized demo this week.`,
+    },
+    {
+      title: 'Value Proposition Pitch',
+      body: `Hi, I wanted to share a case study where we helped Wayne Enterprises cut database latency by 42% in under 3 weeks. Let me know when you're free for a short demo.`,
+    }
+  ],
+  Proposal: [
+    {
+      title: 'Closing Proposal Pitch',
+      body: `Hi, I hope you had a chance to review the contract proposal we sent over. Our platform pays for itself within the first 60 days by saving 18+ engineer hours per week. I'd love to help you lock in our Q2 promotional pricing today.`,
+    },
+    {
+      title: 'Objection Handling: Pricing',
+      body: `I completely understand that this is a significant investment. However, we are covering custom database integration and 24/7 security auditing which would otherwise require a full-time hire costing double. Let's start with a phased launch?`,
+    }
+  ],
+  Won: [
+    {
+      title: 'Onboarding Greeting',
+      body: `Hi, welcome to the family! We've set up your company base portal. Our customer success manager will reach out within 24 hours to schedule your team kickoff.`,
+    },
+    {
+      title: 'Referral Request',
+      body: `Hi, now that your team is up and running on the platform, I'd love to check if there are other operational leads in your network who could benefit from similar database optimization?`,
+    }
+  ],
+  Lost: [
+    {
+      title: 'Lost Deal Graceful Exit',
+      body: `Thank you for your time throughout this process. While the timing isn't right today, I'd love to keep in touch and check back next quarter as your team expands.`,
+    }
+  ]
+};
 
 export default function LeadDetailsScreen() {
   const scheme = useColorScheme();
@@ -20,6 +70,14 @@ export default function LeadDetailsScreen() {
   const [noteTitle, setNoteTitle] = useState('');
   const [noteDesc, setNoteDesc] = useState('');
   const [noteType, setNoteType] = useState<'call' | 'email' | 'meeting' | 'note'>('note');
+
+  // Touchpoint logger overlay state
+  const [activeAction, setActiveAction] = useState<'call' | 'email' | 'sms' | null>(null);
+  const [selectedOutcome, setSelectedOutcome] = useState('');
+  const [outcomeNotes, setOutcomeNotes] = useState('');
+
+  // Script helper states
+  const [showPitchHelper, setShowPitchHelper] = useState(false);
 
   if (!lead) {
     return (
@@ -62,20 +120,32 @@ export default function LeadDetailsScreen() {
       .toUpperCase();
   };
 
-  // Activity Simulations
+  // Activity Actions (open native communications & logger)
   const handleCall = () => {
-    addTimelineNote(lead.id, 'Outbound Call Completed', 'Initiated a voice call to discuss account operations.', 'call');
-    Alert.alert('Simulating Call', `Calling ${lead.name} at ${lead.phone}...`, [{ text: 'OK' }]);
+    Linking.openURL(`tel:${lead.phone}`).catch(err => {
+      console.log('Unable to open native dialer (e.g. simulator without dialer):', err);
+    });
+    setActiveAction('call');
+    setSelectedOutcome('');
+    setOutcomeNotes('');
   };
 
   const handleEmail = () => {
-    addTimelineNote(lead.id, 'Direct Email Dispatched', 'Dispatched informational documents regarding integration specs.', 'email');
-    Alert.alert('Simulating Email', `Composing email to ${lead.email}...`, [{ text: 'OK' }]);
+    Linking.openURL(`mailto:${lead.email}`).catch(err => {
+      console.log('Unable to open native email client:', err);
+    });
+    setActiveAction('email');
+    setSelectedOutcome('');
+    setOutcomeNotes('');
   };
 
   const handleSMS = () => {
-    addTimelineNote(lead.id, 'Text Message Dispatched', 'Sent immediate action reminder over SMS.', 'call');
-    Alert.alert('Simulating SMS', `Sending text message to ${lead.phone}...`, [{ text: 'OK' }]);
+    Linking.openURL(`sms:${lead.phone}`).catch(err => {
+      console.log('Unable to open native SMS client:', err);
+    });
+    setActiveAction('sms');
+    setSelectedOutcome('');
+    setOutcomeNotes('');
   };
 
   const handleDelete = () => {
@@ -183,6 +253,86 @@ export default function LeadDetailsScreen() {
             </Pressable>
           </View>
         </GlassCard>
+
+        {/* Touchpoint Outcome Logger Sheet */}
+        {activeAction && (
+          <GlassCard style={styles.outcomeCard} gradient>
+            <View style={styles.outcomeHeader}>
+              <Text style={[styles.outcomeTitle, { color: theme.text }]}>
+                Log {activeAction.toUpperCase()} Outcome
+              </Text>
+              <Pressable onPress={() => { setActiveAction(null); setSelectedOutcome(''); setOutcomeNotes(''); }}>
+                <Text style={{ color: theme.statusLost, fontWeight: 'bold', fontSize: 11 }}>✕ CANCEL</Text>
+              </Pressable>
+            </View>
+
+            <Text style={[styles.outcomeSubLabel, { color: theme.textSecondary }]}>Select Outcome Status</Text>
+            <View style={styles.outcomeChipsRow}>
+              {(activeAction === 'call' 
+                ? ['Connected', 'Voicemail', 'No Answer', 'Busy'] 
+                : activeAction === 'email' 
+                ? ['Delivered', 'Replied', 'Follow-up Sent', 'Bounced'] 
+                : ['Sent', 'Delivered', 'Replied']
+              ).map(outcome => {
+                const isSel = selectedOutcome === outcome;
+                return (
+                  <Pressable
+                    key={outcome}
+                    onPress={() => setSelectedOutcome(outcome)}
+                    style={[
+                      styles.outcomeChip,
+                      {
+                        backgroundColor: isSel ? theme.backgroundSelected : theme.backgroundElement,
+                        borderColor: isSel ? theme.primary : theme.border,
+                      }
+                    ]}
+                  >
+                    <Text style={[styles.outcomeChipText, { color: isSel ? theme.text : theme.textSecondary }]}>
+                      {outcome}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <TextInput
+              placeholder="Add details / notes for this touchpoint..."
+              placeholderTextColor={theme.textSecondary}
+              value={outcomeNotes}
+              onChangeText={setOutcomeNotes}
+              style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border, marginTop: 10 }]}
+            />
+
+            <Pressable
+              onPress={() => {
+                if (!selectedOutcome) {
+                  Alert.alert('Outcome required', 'Please select an outcome status before saving.');
+                  return;
+                }
+                const formattedTitle = `${activeAction.toUpperCase()}: ${selectedOutcome}`;
+                const desc = outcomeNotes.trim() || `Recorded ${activeAction} outreach with outcome: "${selectedOutcome}".`;
+                addTimelineNote(lead.id, formattedTitle, desc, activeAction === 'sms' ? 'call' : activeAction);
+                
+                // Clear state
+                setActiveAction(null);
+                setSelectedOutcome('');
+                setOutcomeNotes('');
+                if (Platform.OS === 'web') {
+                  alert(`${activeAction.toUpperCase()} touchpoint logged!`);
+                } else {
+                  Alert.alert('Logged', 'Touchpoint recorded in audit timeline.');
+                }
+              }}
+              style={({ pressed }) => [
+                styles.saveNoteBtn,
+                { backgroundColor: theme.primary, marginTop: 12 },
+                pressed && { opacity: 0.8 }
+              ]}
+            >
+              <Text style={styles.saveNoteBtnText}>SAVE TOUCHPOINT LOG</Text>
+            </Pressable>
+          </GlassCard>
+        )}
 
         {/* 2. Core Profile Metadata */}
         <View style={styles.gridRow}>
@@ -292,6 +442,53 @@ export default function LeadDetailsScreen() {
               <Text style={[styles.rescheduleText, { color: theme.statusLost }]}>Clear Date</Text>
             </Pressable>
           </View>
+        </GlassCard>
+
+        {/* AI Outreach Scripts Helper */}
+        <GlassCard style={styles.detailsCard}>
+          <Pressable onPress={() => setShowPitchHelper(!showPitchHelper)} style={styles.pitchHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>
+              🤖 AI Outreach Pitch Helper
+            </Text>
+            <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 11 }}>
+              {showPitchHelper ? 'HIDE' : 'SHOW SCRIPTS'}
+            </Text>
+          </Pressable>
+
+          {showPitchHelper && (
+            <View style={{ marginTop: 12, gap: 10 }}>
+              <Text style={{ fontSize: 11, color: theme.textSecondary }}>
+                Stage-specific scripts based on stage: <Text style={{ color: theme.primary, fontWeight: 'bold' }}>{lead.status}</Text>
+              </Text>
+              {salesScripts[lead.status]?.map((script, idx) => (
+                <View key={`script-${idx}`} style={[styles.scriptItemCard, { borderColor: theme.border, backgroundColor: theme.background }]}>
+                  <Text style={[styles.scriptItemTitle, { color: theme.text }]}>{script.title}</Text>
+                  <Text style={[styles.scriptItemBody, { color: theme.textSecondary }]}>{script.body}</Text>
+                  
+                  <View style={styles.scriptActionsRow}>
+                    <Pressable
+                      onPress={() => {
+                        setNoteTitle(script.title);
+                        setNoteDesc(script.body);
+                        if (Platform.OS === 'web') {
+                          alert('Script copied to the interaction logger below!');
+                        } else {
+                          Alert.alert('Injected', 'Script copied to the interaction logger below.');
+                        }
+                      }}
+                      style={({ pressed }) => [
+                        styles.scriptActionBtn,
+                        { borderColor: theme.primary },
+                        pressed && { opacity: 0.7 }
+                      ]}
+                    >
+                      <Text style={[styles.scriptActionBtnText, { color: theme.primary }]}>Use Script</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </GlassCard>
 
         {/* 4. Logger Action Center */}
@@ -712,5 +909,81 @@ const styles = StyleSheet.create({
   rescheduleText: {
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  outcomeCard: {
+    marginVertical: 12,
+    padding: 16,
+    borderRadius: 16,
+  },
+  outcomeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  outcomeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  outcomeSubLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  outcomeChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  outcomeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.2,
+  },
+  outcomeChipText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  pitchHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  scriptItemCard: {
+    borderRadius: 12,
+    borderWidth: 1.2,
+    padding: 12,
+  },
+  scriptItemTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  scriptItemBody: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  scriptActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  scriptActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  scriptActionBtnText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });

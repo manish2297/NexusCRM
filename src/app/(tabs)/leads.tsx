@@ -11,11 +11,12 @@ export default function LeadsScreen() {
   const theme = Colors[scheme === 'light' ? 'light' : 'dark'];
   const insets = useSafeAreaInsets();
   
-  const { leads } = useCRM();
+  const { leads, updateLead } = useCRM();
 
   // Search and Filter status states
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'All' | 'New' | 'Contacted' | 'Proposal' | 'Won' | 'Lost'>('All');
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
 
   // Filter lists based on selected rules
   const filteredLeads = leads.filter(lead => {
@@ -88,6 +89,38 @@ export default function LeadsScreen() {
           />
         </View>
 
+        {/* View Mode Toggle Row */}
+        <View style={styles.viewModeRow}>
+          <Pressable
+            onPress={() => setViewMode('list')}
+            style={[
+              styles.toggleBtn,
+              {
+                backgroundColor: viewMode === 'list' ? theme.backgroundSelected : theme.backgroundElement,
+                borderColor: theme.border,
+              }
+            ]}
+          >
+            <Text style={[styles.toggleBtnText, { color: viewMode === 'list' ? theme.text : theme.textSecondary }]}>
+              📋 List View
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setViewMode('board')}
+            style={[
+              styles.toggleBtn,
+              {
+                backgroundColor: viewMode === 'board' ? theme.backgroundSelected : theme.backgroundElement,
+                borderColor: theme.border,
+              }
+            ]}
+          >
+            <Text style={[styles.toggleBtnText, { color: viewMode === 'board' ? theme.text : theme.textSecondary }]}>
+              📊 Kanban Board
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Scrolling Filter Chips */}
         <ScrollView
           horizontal
@@ -126,28 +159,108 @@ export default function LeadsScreen() {
         </ScrollView>
       </View>
 
-      {/* Main leads directory scroll list */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: paddingBottomStyle }
-        ]}>
-        <View style={styles.listWrapper}>
-          {filteredLeads.length > 0 ? (
-            filteredLeads.map(lead => (
-              <LeadCard key={lead.id} lead={lead} />
-            ))
-          ) : (
-            <View style={[styles.emptyCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-              <Text style={[styles.emptyTitle, { color: theme.text }]}>No contacts located</Text>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                No entries match your search criteria. Try modifying your filters or add a new record.
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      {/* Main leads directory content */}
+      {viewMode === 'list' ? (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: paddingBottomStyle }
+          ]}>
+          <View style={styles.listWrapper}>
+            {filteredLeads.length > 0 ? (
+              filteredLeads.map(lead => (
+                <LeadCard key={lead.id} lead={lead} />
+              ))
+            ) : (
+              <View style={[styles.emptyCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>No contacts located</Text>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                  No entries match your search criteria. Try modifying your filters or add a new record.
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          style={styles.boardScrollView}
+          contentContainerStyle={styles.boardContent}
+        >
+          {['New', 'Contacted', 'Proposal', 'Won', 'Lost'].map((stage: any) => {
+            const stageLeads = filteredLeads.filter(l => l.status === stage);
+            const stageColor = getFilterColor(stage);
+            const kanbanStages = ['New', 'Contacted', 'Proposal', 'Won', 'Lost'];
+            
+            return (
+              <View key={stage} style={[styles.kanbanColumn, { borderColor: theme.border }]}>
+                {/* Column Header */}
+                <View style={[styles.columnHeader, { borderBottomColor: stageColor }]}>
+                  <View style={styles.columnTitleRow}>
+                    <View style={[styles.columnDot, { backgroundColor: stageColor }]} />
+                    <Text style={[styles.columnTitle, { color: theme.text }]}>{stage}</Text>
+                  </View>
+                  <Text style={[styles.columnCount, { color: theme.textSecondary }]}>
+                    {stageLeads.length} deals • ${stageLeads.reduce((sum, l) => sum + l.value, 0).toLocaleString()}
+                  </Text>
+                </View>
+
+                {/* Column Leads Scroll */}
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  style={styles.columnScrollView}
+                  contentContainerStyle={styles.columnContent}
+                >
+                  {stageLeads.length > 0 ? (
+                    stageLeads.map(lead => {
+                      const stageIdx = kanbanStages.indexOf(lead.status);
+                      return (
+                        <View key={lead.id} style={styles.kanbanCardWrapper}>
+                          <LeadCard lead={lead} />
+                          {/* Fast Action Stage Shift Controls */}
+                          <View style={[styles.kanbanCardActions, { borderTopColor: theme.border }]}>
+                            {stageIdx > 0 && (
+                              <Pressable
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  updateLead(lead.id, { status: kanbanStages[stageIdx - 1] as any });
+                                }}
+                                style={({ pressed }) => [styles.stageShiftBtn, pressed && { opacity: 0.7 }]}
+                              >
+                                <Text style={[styles.stageShiftText, { color: theme.textSecondary }]}>◀ Back</Text>
+                              </Pressable>
+                            )}
+                            <View style={{ flex: 1 }} />
+                            {stageIdx < kanbanStages.length - 1 && (
+                              <Pressable
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  updateLead(lead.id, { status: kanbanStages[stageIdx + 1] as any });
+                                }}
+                                style={({ pressed }) => [styles.stageShiftBtn, pressed && { opacity: 0.7 }]}
+                              >
+                                <Text style={[styles.stageShiftText, { color: theme.primary }]}>Progress ▶</Text>
+                              </Pressable>
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <View style={styles.emptyColumnCard}>
+                      <Text style={[styles.emptyColumnText, { color: theme.textSecondary }]}>
+                        No deals in this stage
+                      </Text>
+                    </View>
+                  )}
+                </ScrollView>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
 
     </View>
   );
@@ -268,5 +381,110 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  viewModeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  toggleBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1.2,
+  },
+  toggleBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  boardScrollView: {
+    flex: 1,
+    marginTop: 10,
+  },
+  boardContent: {
+    paddingHorizontal: Spacing.three,
+    paddingBottom: 24,
+    gap: 16,
+    flexDirection: 'row',
+  },
+  kanbanColumn: {
+    width: 290,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.015)',
+    padding: 10,
+    height: '100%',
+    minHeight: 450,
+  },
+  columnHeader: {
+    paddingBottom: 8,
+    borderBottomWidth: 2,
+    marginBottom: 10,
+  },
+  columnTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  columnDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  columnTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  columnCount: {
+    fontSize: 10.5,
+    marginTop: 3,
+    fontWeight: '600',
+  },
+  columnScrollView: {
+    flex: 1,
+  },
+  columnContent: {
+    gap: 10,
+    paddingBottom: 20,
+  },
+  kanbanCardWrapper: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
+    marginBottom: 8,
+  },
+  kanbanCardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderTopWidth: 1,
+  },
+  stageShiftBtn: {
+    paddingVertical: 4,
+  },
+  stageShiftText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  emptyColumnCard: {
+    paddingVertical: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+  },
+  emptyColumnText: {
+    fontSize: 11,
+    textAlign: 'center',
   },
 });

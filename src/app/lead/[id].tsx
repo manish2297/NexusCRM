@@ -3,11 +3,11 @@ import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
-import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { Colors, Spacing, MaxContentWidth } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
 
 // Outreach templates dictionary based on deal status
-const salesScripts: Record<string, Array<{ title: string; body: string }>> = {
+const salesScripts: Record<string, { title: string; body: string }[]> = {
   New: [
     {
       title: 'Cold Call Hook',
@@ -62,7 +62,7 @@ export default function LeadDetailsScreen() {
   const insets = useSafeAreaInsets();
   
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { leads, updateLead, deleteLead, addTimelineNote } = useCRM();
+  const { leads, updateLead, deleteLead, addTimelineNote, formatCurrency } = useCRM();
 
   const lead = leads.find(l => l.id === id);
 
@@ -339,7 +339,7 @@ export default function LeadDetailsScreen() {
           <View style={{ flex: 1, marginRight: 8 }}>
             <GlassCard style={styles.metaCard}>
               <Text style={[styles.metaLabel, { color: theme.textSecondary }]}>Deal Valuation</Text>
-              <Text style={[styles.metaValue, { color: theme.primary }]}>${lead.value.toLocaleString()}</Text>
+              <Text style={[styles.metaValue, { color: theme.primary }]}>{formatCurrency(lead.value)}</Text>
             </GlassCard>
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
@@ -351,7 +351,7 @@ export default function LeadDetailsScreen() {
         </View>
 
         <GlassCard style={styles.detailsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Lead Information &amp; Notes</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Lead Information & Notes</Text>
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Email Address</Text>
             <Text style={[styles.infoVal, { color: theme.text }]}>{lead.email}</Text>
@@ -370,6 +370,18 @@ export default function LeadDetailsScreen() {
               {lead.nextFollowUp ? lead.nextFollowUp : 'No follow-up scheduled'}
             </Text>
           </View>
+          {lead.tags && lead.tags.length > 0 && (
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Classification Tags</Text>
+              <View style={styles.detailTagsRow}>
+                {lead.tags.map(t => (
+                  <View key={t} style={[styles.detailTagPill, { backgroundColor: theme.primary + '18', borderColor: theme.primary }]}>
+                    <Text style={[styles.detailTagText, { color: theme.primary }]}>#{t}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
           <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
             <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Strategic Context Notes</Text>
             <Text style={[styles.infoValBody, { color: theme.text }]}>{lead.notes || 'No custom notes provided.'}</Text>
@@ -763,6 +775,22 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '500',
     lineHeight: 18,
+  },
+  detailTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  detailTagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  detailTagText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   stageChipsRow: {
     flexDirection: 'row',

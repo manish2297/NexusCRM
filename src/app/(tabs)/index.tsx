@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
 import MetricCard from '@/components/MetricCard';
 import CRMChart from '@/components/CRMChart';
+import SalesFunnelChart from '@/components/SalesFunnelChart';
 import LeadCard from '@/components/LeadCard';
 import GlassCard from '@/components/GlassCard';
 
@@ -15,7 +16,7 @@ export default function DashboardScreen() {
   const theme = Colors[scheme === 'light' ? 'light' : 'dark'];
   const insets = useSafeAreaInsets();
   
-  const { leads, metrics, updateLead, addTimelineNote } = useCRM();
+  const { leads, metrics, updateLead, addTimelineNote, formatCurrency } = useCRM();
   const { logout } = useAuth();
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -240,13 +241,13 @@ export default function DashboardScreen() {
           <View style={styles.metricsRow}>
             <MetricCard
               label="Closed Won Sales"
-              value={`$${metrics.totalRevenue.toLocaleString()}`}
+              value={formatCurrency(metrics.totalRevenue)}
               subText="Revenue realized"
               type="success"
             />
             <MetricCard
               label="Pipeline Deals"
-              value={`$${metrics.activeDealsValue.toLocaleString()}`}
+              value={formatCurrency(metrics.activeDealsValue)}
               subText="Active negotiations"
               type="primary"
             />
@@ -271,6 +272,9 @@ export default function DashboardScreen() {
         <View style={[styles.cardWrapper, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <CRMChart leads={leads} />
         </View>
+
+        {/* Pipeline Conversion Velocity & Source Attribution */}
+        <SalesFunnelChart leads={leads} formatCurrency={formatCurrency} />
 
         {/* Pipeline Follow-Up Radar */}
         <View style={styles.leadsSection}>

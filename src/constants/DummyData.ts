@@ -19,7 +19,28 @@ export interface Lead {
   timeline: TimelineEvent[];
   createdAt: string;
   nextFollowUp?: string; // YYYY-MM-DD
+  tags?: string[];
 }
+
+export interface CRMSettings {
+  currency: '$' | '€' | '£' | '₹';
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  salesQuota: number;
+  notificationsEnabled: boolean;
+  biometricsEnabled: boolean;
+}
+
+export const DEFAULT_SETTINGS: CRMSettings = {
+  currency: '$',
+  userName: 'Alex Sterling',
+  userEmail: 'alex.s@nexuscrm.com',
+  userRole: 'Enterprise Sales Director',
+  salesQuota: 500000,
+  notificationsEnabled: true,
+  biometricsEnabled: false,
+};
 
 export interface CRMTask {
   id: string;
@@ -44,6 +65,7 @@ export const INITIAL_LEADS: Lead[] = [
     notes: 'Key decision maker for security integration. Extremely interested in automated protection systems.',
     createdAt: '2026-05-10T10:00:00Z',
     nextFollowUp: '2026-05-24',
+    tags: ['Enterprise', 'High Intent', 'Security'],
     timeline: [
       {
         id: 't-1-1',
@@ -79,6 +101,7 @@ export const INITIAL_LEADS: Lead[] = [
     source: 'LinkedIn',
     notes: 'Prefers late night communications. Highly interested in deep tech analytics platforms.',
     createdAt: '2026-04-12T09:00:00Z',
+    tags: ['VIP', 'Closed-Won', 'Tech'],
     timeline: [
       {
         id: 't-2-1',
@@ -115,6 +138,7 @@ export const INITIAL_LEADS: Lead[] = [
     notes: 'Expressed interest in clean energy dashboard software. Quick responder, likes neat UI/UX dashboards.',
     createdAt: '2026-05-18T15:30:00Z',
     nextFollowUp: '2026-05-28',
+    tags: ['Enterprise', 'UI/UX', 'Clean Energy'],
     timeline: [
       {
         id: 't-3-1',
@@ -137,6 +161,7 @@ export const INITIAL_LEADS: Lead[] = [
     notes: 'Looking for a digital archiving system. Prefers emails rather than phone calls.',
     createdAt: '2026-05-22T11:45:00Z',
     nextFollowUp: '2026-06-04',
+    tags: ['Public Sector', 'Archive'],
     timeline: []
   },
   {
@@ -150,6 +175,7 @@ export const INITIAL_LEADS: Lead[] = [
     source: 'Referral',
     notes: 'Budget constraints prevented closure. Keeping on watch list for next quarter.',
     createdAt: '2026-03-01T10:00:00Z',
+    tags: ['Budget Alert', 'Media'],
     timeline: [
       {
         id: 't-5-1',

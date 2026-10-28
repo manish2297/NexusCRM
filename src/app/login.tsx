@@ -9,12 +9,22 @@ export default function LoginScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'light' ? 'light' : 'dark'];
   const insets = useSafeAreaInsets();
-  const { login } = useAuth();
+  const { login, loginWithBiometrics, isBiometricSupported, biometricName } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleBiometricLogin = async () => {
+    setErrorMsg(null);
+    setIsSubmitting(true);
+    const success = await loginWithBiometrics();
+    setIsSubmitting(false);
+    if (!success) {
+      setErrorMsg('Biometric authentication cancelled or not recognized.');
+    }
+  };
 
   const handleLogin = async () => {
     setErrorMsg(null);
@@ -97,6 +107,22 @@ export default function LoginScreen() {
               <Text style={styles.loginButtonText}>AUTHORIZE ACCESS</Text>
             )}
           </Pressable>
+
+          {isBiometricSupported && (
+            <Pressable
+              onPress={handleBiometricLogin}
+              disabled={isSubmitting}
+              style={({ pressed }) => [
+                styles.biometricButton,
+                { borderColor: theme.primary, backgroundColor: theme.backgroundElement },
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={[styles.biometricButtonText, { color: theme.primary }]}>
+                🔒 UNLOCK WITH {biometricName.toUpperCase()}
+              </Text>
+            </Pressable>
+          )}
 
           <View style={[styles.tipBox, { borderColor: theme.border }]}>
             <Text style={[styles.tipTitle, { color: theme.text }]}>🔑 Default Sandbox Profile</Text>
@@ -204,6 +230,18 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 12,
     letterSpacing: 1,
+  },
+  biometricButton: {
+    paddingVertical: 11,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  biometricButtonText: {
+    fontWeight: '800',
+    fontSize: 11,
+    letterSpacing: 0.8,
   },
   buttonPressed: {
     opacity: 0.85,

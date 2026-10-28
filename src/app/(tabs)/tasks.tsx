@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, TextInput } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
@@ -48,14 +48,32 @@ export default function TasksScreen() {
     ? Math.round((completedCount / tasks.length) * 100) 
     : 0;
 
+  // Keep selectedLeadId in sync when leads change (e.g. after factory reset or lead creation)
+  React.useEffect(() => {
+    if (leads.length > 0 && (!selectedLeadId || !leads.some(l => l.id === selectedLeadId))) {
+      setSelectedLeadId(leads[0].id);
+    } else if (leads.length === 0) {
+      setSelectedLeadId('');
+    }
+  }, [leads, selectedLeadId]);
+
   const handleCreateTask = () => {
     if (!description.trim()) return;
-    
-    const selectedLead = leads.find(l => l.id === selectedLeadId);
+
+    if (leads.length === 0) {
+      if (Platform.OS === 'web') {
+        alert('Please create an account in the Leads directory first.');
+      } else {
+        Alert.alert('No Leads Available', 'Please add an account in the Leads tab before creating tasks.');
+      }
+      return;
+    }
+
+    const selectedLead = leads.find(l => l.id === selectedLeadId) || leads[0];
     if (!selectedLead) return;
 
     addTask({
-      leadId: selectedLeadId,
+      leadId: selectedLead.id,
       leadName: selectedLead.name,
       description: description.trim(),
       priority,
@@ -201,22 +219,28 @@ export default function TasksScreen() {
                   <View style={[styles.pickerMock, { borderColor: theme.border, backgroundColor: theme.background }]}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       <View style={{ flexDirection: 'row', gap: 6 }}>
-                        {leads.map(lead => (
-                          <Pressable
-                            key={lead.id}
-                            onPress={() => setSelectedLeadId(lead.id)}
-                            style={[
-                              styles.pickerOption,
-                              {
-                                backgroundColor: selectedLeadId === lead.id ? theme.backgroundSelected : 'transparent',
-                                borderColor: selectedLeadId === lead.id ? theme.primary : theme.border,
-                              }
-                            ]}>
-                            <Text style={[styles.pickerOptText, { color: selectedLeadId === lead.id ? theme.text : theme.textSecondary }]}>
-                              {lead.name}
-                            </Text>
-                          </Pressable>
-                        ))}
+                        {leads.length === 0 ? (
+                          <Text style={{ color: theme.textSecondary, fontSize: 11, paddingVertical: 4 }}>
+                            No accounts available. Add a lead first.
+                          </Text>
+                        ) : (
+                          leads.map(lead => (
+                            <Pressable
+                              key={lead.id}
+                              onPress={() => setSelectedLeadId(lead.id)}
+                              style={[
+                                styles.pickerOption,
+                                {
+                                  backgroundColor: selectedLeadId === lead.id ? theme.backgroundSelected : 'transparent',
+                                  borderColor: selectedLeadId === lead.id ? theme.primary : theme.border,
+                                }
+                              ]}>
+                              <Text style={[styles.pickerOptText, { color: selectedLeadId === lead.id ? theme.text : theme.textSecondary }]}>
+                                {lead.name}
+                              </Text>
+                            </Pressable>
+                          ))
+                        )}
                       </View>
                     </ScrollView>
                   </View>

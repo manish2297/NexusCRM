@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, TextInput, Pressable, useColorScheme, Platform, FlatList } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TextInput, Pressable, useColorScheme, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
@@ -16,18 +16,30 @@ export default function LeadsScreen() {
   // Search and Filter status states
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'All' | 'New' | 'Contacted' | 'Proposal' | 'Won' | 'Lost'>('All');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
+
+  // Extract all distinct tags from leads
+  const allTags = React.useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach(l => {
+      (l.tags || []).forEach(t => set.add(t));
+    });
+    return Array.from(set);
+  }, [leads]);
 
   // Filter lists based on selected rules
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchQuery.toLowerCase());
+      lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (lead.tags && lead.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase())));
       
     const matchesFilter = activeFilter === 'All' || lead.status === activeFilter;
+    const matchesTag = !selectedTag || (lead.tags && lead.tags.includes(selectedTag));
     
-    return matchesSearch && matchesFilter;
+    return matchesSearch && matchesFilter && matchesTag;
   });
 
   const filters: ('All' | 'New' | 'Contacted' | 'Proposal' | 'Won' | 'Lost')[] = [
@@ -157,6 +169,56 @@ export default function LeadsScreen() {
             );
           })}
         </ScrollView>
+
+        {/* Scrolling Tag Filter Chips */}
+        {allTags.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tagsFilterScroll}
+            contentContainerStyle={styles.tagsFilterContent}>
+            <Pressable
+              onPress={() => setSelectedTag(null)}
+              style={[
+                styles.tagFilterChip,
+                {
+                  backgroundColor: !selectedTag ? theme.primary + '20' : theme.backgroundElement,
+                  borderColor: !selectedTag ? theme.primary : theme.border,
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.tagFilterText,
+                  { color: !selectedTag ? theme.primary : theme.textSecondary },
+                ]}>
+                # All Tags
+              </Text>
+            </Pressable>
+            {allTags.map(tag => {
+              const isSelected = selectedTag === tag;
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => setSelectedTag(isSelected ? null : tag)}
+                  style={[
+                    styles.tagFilterChip,
+                    {
+                      backgroundColor: isSelected ? theme.primary + '20' : theme.backgroundElement,
+                      borderColor: isSelected ? theme.primary : theme.border,
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.tagFilterText,
+                      { color: isSelected ? theme.primary : theme.textSecondary },
+                    ]}>
+                    #{tag}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* Main leads directory content */}
@@ -349,6 +411,25 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 11,
     textTransform: 'uppercase',
+  },
+  tagsFilterScroll: {
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  tagsFilterContent: {
+    paddingRight: 16,
+    gap: 6,
+    flexDirection: 'row',
+  },
+  tagFilterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  tagFilterText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   scrollView: {
     flex: 1,

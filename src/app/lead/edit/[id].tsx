@@ -26,7 +26,10 @@ export default function EditLeadScreen() {
   const [source, setSource] = useState(lead?.source || 'Website');
   const [notes, setNotes] = useState(lead?.notes || '');
   const [nextFollowUp, setNextFollowUp] = useState(lead?.nextFollowUp || '');
+  const [selectedTags, setSelectedTags] = useState<string[]>(lead?.tags || []);
+  const [customTagInput, setCustomTagInput] = useState('');
 
+  const PRESET_TAGS = ['Enterprise', 'VIP', 'High Intent', 'In Review', 'Fast-Track', 'Security', 'Tech', 'Public Sector'];
   const sources = ['Website', 'LinkedIn', 'Referral', 'Cold Call', 'Event'];
 
   if (!lead) {
@@ -73,6 +76,7 @@ export default function EditLeadScreen() {
       source,
       notes: notes.trim(),
       nextFollowUp: nextFollowUp.trim() || undefined,
+      tags: selectedTags,
     });
 
     // Notify & Back
@@ -85,6 +89,20 @@ export default function EditLeadScreen() {
         `Changes to lead "${name}" have been saved successfully.`,
         [{ text: 'OK', onPress: () => router.back() }]
       );
+    }
+  };
+
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleAddCustomTag = () => {
+    const trimmed = customTagInput.trim();
+    if (trimmed && !selectedTags.includes(trimmed)) {
+      setSelectedTags(prev => [...prev, trimmed]);
+      setCustomTagInput('');
     }
   };
 
@@ -247,6 +265,61 @@ export default function EditLeadScreen() {
             </ScrollView>
           </View>
 
+          {/* Section 4: Tags & Classification */}
+          <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+              4. Classification & Priority Tags
+            </Text>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Select Tags</Text>
+            <View style={styles.tagsContainer}>
+              {PRESET_TAGS.map(tag => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <Pressable
+                    key={tag}
+                    onPress={() => handleToggleTag(tag)}
+                    style={[
+                      styles.tagChip,
+                      {
+                        backgroundColor: isSelected ? theme.primary + '20' : theme.backgroundElement,
+                        borderColor: isSelected ? theme.primary : theme.border,
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.tagChipText,
+                        { color: isSelected ? theme.primary : theme.textSecondary },
+                      ]}>
+                      {isSelected ? `✓ ${tag}` : `+ ${tag}`}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Custom Tag Input */}
+            <View style={styles.customTagRow}>
+              <TextInput
+                placeholder="Add custom tag (e.g. Enterprise Q3)"
+                placeholderTextColor={theme.textSecondary}
+                value={customTagInput}
+                onChangeText={setCustomTagInput}
+                style={[
+                  styles.customTagInput,
+                  { color: theme.text, backgroundColor: theme.background, borderColor: theme.border },
+                ]}
+              />
+              <Pressable
+                onPress={handleAddCustomTag}
+                style={[styles.addTagBtn, { backgroundColor: theme.backgroundSelected, borderColor: theme.border }]}>
+                <Text style={[styles.addTagBtnText, { color: theme.primary }]}>ADD</Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* Context Notes */}
           <View style={styles.formGroup}>
             <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Strategic Context Notes</Text>
@@ -388,6 +461,46 @@ const styles = StyleSheet.create({
   sourceChipText: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  tagChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  tagChipText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  customTagRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+  },
+  customTagInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 11.5,
+  },
+  addTagBtn: {
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addTagBtnText: {
+    fontSize: 10.5,
+    fontWeight: '800',
   },
   ctaButton: {
     paddingVertical: 12,

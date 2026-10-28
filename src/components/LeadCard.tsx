@@ -103,6 +103,26 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
               </View>
               {renderFollowUpBadge()}
             </View>
+
+            {lead.tags && lead.tags.length > 0 && (
+              <View style={styles.cardTagsRow}>
+                {lead.tags.slice(0, 3).map(tag => (
+                  <View
+                    key={tag}
+                    style={[
+                      styles.cardTagPill,
+                      { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                    ]}>
+                    <Text style={[styles.cardTagText, { color: theme.primary }]}>#{tag}</Text>
+                  </View>
+                ))}
+                {lead.tags.length > 3 && (
+                  <Text style={[styles.cardTagMore, { color: theme.textSecondary }]}>
+                    +{lead.tags.length - 3}
+                  </Text>
+                )}
+              </View>
+            )}
           </View>
 
           {/* Deal Value & Status Badge */}
@@ -194,6 +214,27 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
+  },
+  cardTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    flexWrap: 'wrap',
+  },
+  cardTagPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+    borderWidth: 0.8,
+  },
+  cardTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  cardTagMore: {
+    fontSize: 9,
+    fontWeight: '600',
   },
   valueCol: {
     alignItems: 'flex-end',

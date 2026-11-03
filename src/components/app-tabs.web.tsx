@@ -7,7 +7,7 @@ import {
   TabListProps,
 } from 'expo-router/ui';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Pressable, useColorScheme, View, StyleSheet, Image, ImageSourcePropType } from 'react-native';
 
 import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
@@ -22,16 +22,16 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="index" href={"/" as any} asChild>
-            <TabButton>Dashboard</TabButton>
+            <TabButton icon={require('@/assets/images/tabIcons/dashboard.png')}>Dashboard</TabButton>
           </TabTrigger>
           <TabTrigger name="leads" href={"/leads" as any} asChild>
-            <TabButton>Leads</TabButton>
+            <TabButton icon={require('@/assets/images/tabIcons/leads.png')}>Leads</TabButton>
           </TabTrigger>
           <TabTrigger name="tasks" href={"/tasks" as any} asChild>
-            <TabButton>Planner</TabButton>
+            <TabButton icon={require('@/assets/images/tabIcons/tasks.png')}>Tasks</TabButton>
           </TabTrigger>
           <TabTrigger name="settings" href={"/settings" as any} asChild>
-            <TabButton>Settings</TabButton>
+            <TabButton icon={require('@/assets/images/tabIcons/settings.png')}>Settings</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -39,12 +39,29 @@ export default function AppTabs() {
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+export function TabButton({
+  children,
+  isFocused,
+  icon,
+  ...props
+}: TabTriggerSlotProps & { icon?: ImageSourcePropType }) {
+  const scheme = useColorScheme();
+  const colors = Colors[scheme === 'unspecified' || !scheme ? 'dark' : scheme];
+
   return (
     <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.tabButtonView}>
+        {icon && (
+          <Image
+            source={icon}
+            style={[
+              styles.tabButtonIcon,
+              { tintColor: isFocused ? colors.primary : colors.textSecondary }
+            ]}
+          />
+        )}
         <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
           {children}
         </ThemedText>
@@ -110,6 +127,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tabButtonIcon: {
+    width: 15,
+    height: 15,
+    resizeMode: 'contain',
   },
   externalPressable: {
     flexDirection: 'row',

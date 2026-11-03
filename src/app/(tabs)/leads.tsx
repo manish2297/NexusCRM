@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, TextInput, Pressable, useColorScheme, Platform } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TextInput, Pressable, useColorScheme, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
@@ -70,11 +70,16 @@ export default function LeadsScreen() {
       {/* Search and Filters Header is sticky on top */}
       <View style={[styles.stickyHeader, { paddingTop: Math.max(insets.top, 24), borderBottomColor: theme.border }]}>
         <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.title, { color: theme.text }]}>Accounts Directory</Text>
-            <Text style={[styles.subText, { color: theme.textSecondary }]}>
-              Portfolio total: {leads.length} contacts ({filteredLeads.length} showing)
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.headerLogoBadge, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '40' }]}>
+              <Image source={require('@/assets/images/tabIcons/leads.png')} style={[styles.headerLogoIcon, { tintColor: theme.primary }]} />
+            </View>
+            <View>
+              <Text style={[styles.title, { color: theme.text }]}>Accounts Directory</Text>
+              <Text style={[styles.subText, { color: theme.textSecondary }]}>
+                Portfolio total: {leads.length} contacts ({filteredLeads.length} showing)
+              </Text>
+            </View>
           </View>
           <Pressable
             onPress={() => {
@@ -342,6 +347,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: 12,
+  },
+  headerLogoBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogoIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 22,

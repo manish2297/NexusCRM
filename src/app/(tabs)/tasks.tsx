@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, TextInput, Alert } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, TextInput, Alert, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
@@ -106,11 +106,16 @@ export default function TasksScreen() {
       {/* Sticky Header */}
       <View style={[styles.stickyHeader, { paddingTop: Math.max(insets.top, 24), borderBottomColor: theme.border }]}>
         <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.title, { color: theme.text }]}>Actions &amp; Planner</Text>
-            <Text style={[styles.subText, { color: theme.textSecondary }]}>
-              {todayCount + overdueCount} focus tasks for today
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.headerLogoBadge, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '40' }]}>
+              <Image source={require('@/assets/images/tabIcons/tasks.png')} style={[styles.headerLogoIcon, { tintColor: theme.primary }]} />
+            </View>
+            <View>
+              <Text style={[styles.title, { color: theme.text }]}>Actions &amp; Planner</Text>
+              <Text style={[styles.subText, { color: theme.textSecondary }]}>
+                {todayCount + overdueCount} focus tasks for today
+              </Text>
+            </View>
           </View>
           <Pressable
             onPress={() => setShowAddForm(!showAddForm)}
@@ -394,6 +399,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: 12,
+  },
+  headerLogoBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogoIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 22,

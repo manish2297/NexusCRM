@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, Alert, Linking } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform, Alert, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
@@ -135,35 +135,40 @@ export default function DashboardScreen() {
         
         {/* Header Section */}
         <View style={styles.headerRow}>
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={[styles.brandTitle, { color: theme.primary }]}>NEXUS CRM</Text>
-              <Pressable
-                onPress={() => {
-                  const performLogout = () => {
-                    logout();
-                  };
-                  if (Platform.OS === 'web') {
-                    if (confirm('Are you sure you want to log out?')) {
-                      performLogout();
-                    }
-                  } else {
-                    Alert.alert(
-                      'Logout Confirmation',
-                      'Are you sure you want to log out of Nexus CRM?',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Logout', style: 'destructive', onPress: performLogout }
-                      ]
-                    );
-                  }
-                }}
-                style={({ pressed }) => [styles.logoutHeaderBtn, pressed && { opacity: 0.7 }]}
-              >
-                <Text style={[styles.logoutHeaderText, { color: theme.statusLost }]}>[LOGOUT]</Text>
-              </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.headerLogoBadge, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '40' }]}>
+              <Image source={require('@/assets/images/tabIcons/dashboard.png')} style={[styles.headerLogoIcon, { tintColor: theme.primary }]} />
             </View>
-            <Text style={[styles.greetingText, { color: theme.text }]}>Command Dashboard</Text>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={[styles.brandTitle, { color: theme.primary }]}>NEXUS CRM</Text>
+                <Pressable
+                  onPress={() => {
+                    const performLogout = () => {
+                      logout();
+                    };
+                    if (Platform.OS === 'web') {
+                      if (confirm('Are you sure you want to log out?')) {
+                        performLogout();
+                      }
+                    } else {
+                      Alert.alert(
+                        'Logout Confirmation',
+                        'Are you sure you want to log out of Nexus CRM?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Logout', style: 'destructive', onPress: performLogout }
+                        ]
+                      );
+                    }
+                  }}
+                  style={({ pressed }) => [styles.logoutHeaderBtn, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={[styles.logoutHeaderText, { color: theme.statusLost }]}>[LOGOUT]</Text>
+                </Pressable>
+              </View>
+              <Text style={[styles.greetingText, { color: theme.text }]}>Command Dashboard</Text>
+            </View>
           </View>
           <Pressable
             onPress={() => {
@@ -427,6 +432,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: 16,
+  },
+  headerLogoBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogoIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   brandTitle: {
     fontSize: 11,

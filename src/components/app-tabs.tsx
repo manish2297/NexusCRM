@@ -16,7 +16,9 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
+          sf="square.grid.2x2.fill"
+          md="dashboard"
+          src={require('@/assets/images/tabIcons/dashboard.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>
@@ -24,7 +26,9 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="leads">
         <NativeTabs.Trigger.Label>Leads</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
+          sf="person.2.fill"
+          md="groups"
+          src={require('@/assets/images/tabIcons/leads.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>
@@ -32,7 +36,9 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="tasks">
         <NativeTabs.Trigger.Label>Tasks</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
+          sf="checklist"
+          md="task_alt"
+          src={require('@/assets/images/tabIcons/tasks.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>
@@ -40,7 +46,9 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
+          sf="gearshape.fill"
+          md="settings"
+          src={require('@/assets/images/tabIcons/settings.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>

@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Switch,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -162,8 +163,15 @@ export default function SettingsScreen() {
         <View style={styles.innerWrapper}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.headerPre, { color: theme.primary }]}>CONTROL & PREFERENCES</Text>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>Settings Cockpit</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={[styles.headerLogoBadge, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '40' }]}>
+                <Image source={require('@/assets/images/tabIcons/settings.png')} style={[styles.headerLogoIcon, { tintColor: theme.primary }]} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.headerPre, { color: theme.primary }]}>CONTROL & PREFERENCES</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Settings Cockpit</Text>
+              </View>
+            </View>
             <Text style={[styles.headerSub, { color: theme.textSecondary }]}>
               Workspace management, data synchronization, and currency configuration.
             </Text>
@@ -401,6 +409,19 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: Spacing.one,
+  },
+  headerLogoBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogoIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerPre: {
     fontSize: 10,

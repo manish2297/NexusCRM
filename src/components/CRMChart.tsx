@@ -49,21 +49,31 @@ export const CRMChart: React.FC<CRMChartProps> = ({ leads }) => {
     };
   });
 
-  // 2. Trend Data (Static simulation matching the dummy lead dates but reactive to modifications)
-  // Sarah ($85k, Proposal), Bruce ($250k, Won), Tony ($175k, Contacted), Diana ($45k, New), Peter ($12k, Lost)
-  // Let's create a beautiful bezier curve connecting five points on an SVG view:
-  // Points representing monthly growth: (Jan: 50k, Feb: 90k, Mar: 120k, Apr: 180k, May: Current active + won value)
-  const currentTotal = leads
+  // 2. Trend Data based on actual leads
+  const wonTotal = leads
     .filter(l => l.status === 'Won')
-    .reduce((sum, l) => sum + l.value, 0) + 120000; // Offset base to look authentic
-    
-  const dataPoints = [40000, 75000, 110000, 165000, currentTotal];
+    .reduce((sum, l) => sum + l.value, 0);
+
+  const activeTotal = leads
+    .filter(l => l.status !== 'Won' && l.status !== 'Lost')
+    .reduce((sum, l) => sum + l.value, 0);
+
+  const currentTotal = wonTotal + activeTotal;
+  const dataPoints = currentTotal === 0
+    ? [0, 0, 0, 0, 0]
+    : [
+        Math.round(wonTotal * 0.2),
+        Math.round(wonTotal * 0.45),
+        Math.round(wonTotal * 0.75),
+        wonTotal,
+        currentTotal,
+      ];
   const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
   
   // Svg Drawing Config
   const chartHeight = 140;
   const chartWidth = screenWidth - 32;
-  const maxVal = Math.max(...dataPoints, 200000) * 1.1; // Add 10% padding on top
+  const maxVal = Math.max(...dataPoints, 1000) * 1.1; // Add 10% padding on top
   const paddingX = 20;
   const paddingY = 20;
 

@@ -39,7 +39,7 @@ export default function LoginScreen() {
     setIsSubmitting(false);
 
     if (!success) {
-      setErrorMsg('Invalid email format or password. Try admin@nexuscrm.com / password123.');
+      setErrorMsg('Invalid email address or password (minimum 4 characters).');
     }
   };
 
@@ -123,16 +123,6 @@ export default function LoginScreen() {
               </Text>
             </Pressable>
           )}
-
-          <View style={[styles.tipBox, { borderColor: theme.border }]}>
-            <Text style={[styles.tipTitle, { color: theme.text }]}>🔑 Default Sandbox Profile</Text>
-            <Text style={[styles.tipText, { color: theme.textSecondary }]}>
-              Email: <Text style={{ color: theme.text, fontWeight: 'bold' }}>admin@nexuscrm.com</Text>
-            </Text>
-            <Text style={[styles.tipText, { color: theme.textSecondary }]}>
-              Password: <Text style={{ color: theme.text, fontWeight: 'bold' }}>password123</Text>
-            </Text>
-          </View>
         </GlassCard>
       </View>
     </KeyboardAvoidingView>
@@ -246,19 +236,5 @@ const styles = StyleSheet.create({
   buttonPressed: {
     opacity: 0.85,
     transform: [{ scale: 0.98 }],
-  },
-  tipBox: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    paddingTop: 16,
-    gap: 4,
-  },
-  tipTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  tipText: {
-    fontSize: 10.5,
   },
 });

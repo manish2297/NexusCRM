@@ -44,9 +44,18 @@ export default function SettingsScreen() {
     default: Spacing.four,
   });
 
+  const displayName = settings.userName && settings.userName !== 'Alex Sterling' && settings.userName !== 'Alex Morgan' && settings.userName !== 'User Profile'
+    ? settings.userName
+    : userEmail
+    ? userEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'User Profile';
+  const displayEmail = userEmail || (settings.userEmail && settings.userEmail !== 'alex.s@nexuscrm.com' ? settings.userEmail : 'Active Session');
+  const displayRole = settings.userRole || 'Account Executive';
+  const avatarInitials = (displayName || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
   const quotaProgress = Math.min(
     100,
-    Math.round((metrics.totalRevenue / (settings.salesQuota || 500000)) * 100)
+    Math.round((metrics.totalRevenue / (settings.salesQuota || 100000)) * 100)
   );
 
   const handleExportCSV = async () => {
@@ -105,32 +114,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleRestoreDemoData = () => {
-    const performRestore = async () => {
-      await resetToDemoData();
-      if (Platform.OS === 'web') {
-        alert('All records restored to sample demonstration dataset.');
-      } else {
-        Alert.alert('Demo Data Restored', 'Database restored to initial demonstration records.');
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (confirm('Load demo sample dataset? This will replace your current records with sample enterprise leads.')) {
-        performRestore();
-      }
-    } else {
-      Alert.alert(
-        'Restore Sample Demo Data',
-        'Would you like to populate the CRM with initial sample enterprise leads and tasks?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Restore Demo Data', onPress: performRestore },
-        ]
-      );
-    }
-  };
-
   const handleLogout = () => {
     const doLogout = async () => {
       await logout();
@@ -182,14 +165,14 @@ export default function SettingsScreen() {
             <View style={styles.profileRow}>
               <View style={[styles.avatar, { backgroundColor: theme.primary + '25', borderColor: theme.primary }]}>
                 <Text style={[styles.avatarText, { color: theme.primary }]}>
-                  {(settings.userName || 'User').split(' ').map(n => n[0]).join('')}
+                  {avatarInitials}
                 </Text>
               </View>
               <View style={styles.profileMeta}>
-                <Text style={[styles.userName, { color: theme.text }]}>{settings.userName}</Text>
-                <Text style={[styles.userRole, { color: theme.primary }]}>{settings.userRole}</Text>
+                <Text style={[styles.userName, { color: theme.text }]}>{displayName}</Text>
+                <Text style={[styles.userRole, { color: theme.primary }]}>{displayRole}</Text>
                 <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
-                  {userEmail || settings.userEmail}
+                  {displayEmail}
                 </Text>
               </View>
             </View>
@@ -199,7 +182,7 @@ export default function SettingsScreen() {
               <View style={styles.quotaHeader}>
                 <Text style={[styles.quotaTitle, { color: theme.textSecondary }]}>QUARTERLY SALES TARGET</Text>
                 <Text style={[styles.quotaVal, { color: theme.text }]}>
-                  {formatCurrency(metrics.totalRevenue)} / {formatCurrency(settings.salesQuota || 500000)}
+                  {formatCurrency(metrics.totalRevenue)} / {formatCurrency(settings.salesQuota || 100000)}
                 </Text>
               </View>
               <View style={[styles.progressTrack, { backgroundColor: theme.background }]}>
@@ -346,19 +329,7 @@ export default function SettingsScreen() {
                   pressed && styles.pressed,
                 ]}>
                 <Text style={[styles.actionBtnTextDanger, { color: theme.statusLost }]}>
-                  🗑️ FACTORY RESET (DELETE ALL DATA)
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleRestoreDemoData}
-                style={({ pressed }) => [
-                  styles.actionBtnSecondary,
-                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                  pressed && styles.pressed,
-                ]}>
-                <Text style={[styles.actionBtnTextSecondary, { color: theme.textSecondary }]}>
-                  🔄 RESTORE SAMPLE DEMO DATA
+                  🗑️ FACTORY RESET (CLEAR ALL CRM DATA)
                 </Text>
               </Pressable>
             </View>
@@ -366,11 +337,16 @@ export default function SettingsScreen() {
 
           {/* Session & Sign Out */}
           <GlassCard style={styles.card}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Session</Text>
+            <Text style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+              Logged in as {displayEmail}. Use the button below to sign out of your workspace.
+            </Text>
+
             <Pressable
               onPress={handleLogout}
               style={({ pressed }) => [
                 styles.logoutBtn,
-                { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                { borderColor: theme.statusLost + '60', backgroundColor: theme.statusLost + '15' },
                 pressed && styles.pressed,
               ]}>
               <Text style={[styles.logoutBtnText, { color: theme.statusLost }]}>

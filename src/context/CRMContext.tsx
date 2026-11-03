@@ -45,6 +45,10 @@ interface CRMContextType {
 
 const CRMContext = createContext<CRMContextType | undefined>(undefined);
 
+const DUMMY_LEAD_IDS = new Set(['lead-1', 'lead-2', 'lead-3', 'lead-4', 'lead-5']);
+const DUMMY_NAMES = new Set(['Sarah Connor', 'Bruce Wayne', 'Tony Stark', 'Diana Prince', 'Peter Parker']);
+const DUMMY_TASK_IDS = new Set(['task-1', 'task-2', 'task-3', 'task-4']);
+
 export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [tasks, setTasks] = useState<CRMTask[]>([]);
@@ -72,7 +76,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           storedSettings !== null;
 
         if (!hasExistingData) {
-          // Brand new install: seed initial demo data
+          // Brand new install: seed initial clean state
           setLeads(INITIAL_LEADS);
           setTasks(INITIAL_TASKS);
           setSettings(DEFAULT_SETTINGS);
@@ -83,24 +87,38 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS)),
           ]);
         } else {
-          // Existing install: load stored records directly (supports empty arrays [] after factory reset)
+          // Existing install: purge any previous dummy sample records and load real data
           if (storedLeads !== null) {
-            const parsedLeads = JSON.parse(storedLeads);
+            let parsedLeads = JSON.parse(storedLeads);
             if (Array.isArray(parsedLeads)) {
+              parsedLeads = parsedLeads.filter(
+                (l: Lead) => !DUMMY_LEAD_IDS.has(l.id) && !DUMMY_NAMES.has(l.name)
+              );
               setLeads(parsedLeads);
             }
           }
 
           if (storedTasks !== null) {
-            const parsedTasks = JSON.parse(storedTasks);
+            let parsedTasks = JSON.parse(storedTasks);
             if (Array.isArray(parsedTasks)) {
+              parsedTasks = parsedTasks.filter(
+                (t: CRMTask) => !DUMMY_TASK_IDS.has(t.id) && !DUMMY_LEAD_IDS.has(t.leadId)
+              );
               setTasks(parsedTasks);
             }
           }
 
           if (storedSettings !== null) {
             const parsedSettings = JSON.parse(storedSettings);
-            setSettings(prev => ({ ...prev, ...parsedSettings }));
+            if (parsedSettings) {
+              if (parsedSettings.userName === 'Alex Sterling' || parsedSettings.userName === 'Alex Morgan') {
+                delete parsedSettings.userName;
+              }
+              if (parsedSettings.userEmail === 'alex.s@nexuscrm.com' || parsedSettings.userEmail === 'admin@nexuscrm.com') {
+                delete parsedSettings.userEmail;
+              }
+              setSettings(prev => ({ ...prev, ...parsedSettings }));
+            }
           }
         }
       } catch (err) {

@@ -3,12 +3,14 @@ import { ScrollView, View, Text, StyleSheet, Pressable, useColorScheme, Platform
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCRM } from '@/context/CRMContext';
+import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
 import MetricCard from '@/components/MetricCard';
 import CRMChart from '@/components/CRMChart';
 import SalesFunnelChart from '@/components/SalesFunnelChart';
 import LeadCard from '@/components/LeadCard';
 import GlassCard from '@/components/GlassCard';
+import NexusLogo from '@/components/NexusLogo';
 
 export default function DashboardScreen() {
   const scheme = useColorScheme();
@@ -16,6 +18,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   
   const { leads, metrics, updateLead, addTimelineNote, formatCurrency } = useCRM();
+  const { currentUser } = useAuth();
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -134,11 +137,16 @@ export default function DashboardScreen() {
         {/* Header Section */}
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={[styles.headerLogoBadge, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '40' }]}>
-              <Image source={require('@/assets/images/tabIcons/dashboard.png')} style={[styles.headerLogoIcon, { tintColor: theme.primary }]} />
-            </View>
+            <NexusLogo size={42} />
             <View>
-              <Text style={[styles.brandTitle, { color: theme.primary }]}>NEXUS CRM</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.brandTitle, { color: theme.primary }]}>NEXUS CRM</Text>
+                {currentUser && (
+                  <View style={[styles.roleBadgeHeader, { borderColor: currentUser.color + '60', backgroundColor: currentUser.color + '18' }]}>
+                    <Text style={[styles.roleBadgeHeaderText, { color: currentUser.color }]}>{currentUser.badge}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={[styles.greetingText, { color: theme.text }]}>Command Dashboard</Text>
             </View>
           </View>
@@ -423,6 +431,17 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 2,
     textTransform: 'uppercase',
+  },
+  roleBadgeHeader: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  roleBadgeHeaderText: {
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   greetingText: {
     fontSize: 24,

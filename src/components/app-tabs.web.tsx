@@ -12,6 +12,7 @@ import { Pressable, useColorScheme, View, StyleSheet, Image, ImageSourcePropType
 import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+import NexusLogo from './NexusLogo';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -77,9 +78,12 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Nexus CRM
-        </ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 'auto' }}>
+          <NexusLogo size={22} />
+          <ThemedText type="smallBold" style={styles.brandText}>
+            Nexus CRM
+          </ThemedText>
+        </View>
 
         {props.children}
 
@@ -118,7 +122,8 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
   },
   brandText: {
-    marginRight: 'auto',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   pressed: {
     opacity: 0.7,

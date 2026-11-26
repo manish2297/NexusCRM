@@ -17,6 +17,7 @@ import { useCRM } from '@/context/CRMContext';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
+import NexusLogo from '@/components/NexusLogo';
 import { ExportService } from '@/services/ExportService';
 import { NotificationService } from '@/services/NotificationService';
 
@@ -34,7 +35,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
 
   const { leads, tasks, settings, updateSettings, resetToDemoData, factoryReset, formatCurrency, metrics } = useCRM();
-  const { logout, userEmail, isBiometricSupported, biometricName } = useAuth();
+  const { logout, userEmail, currentUser, loginAsAccount, primaryAccounts, isBiometricSupported, biometricName } = useAuth();
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -44,18 +45,16 @@ export default function SettingsScreen() {
     default: Spacing.four,
   });
 
-  const displayName = settings.userName && settings.userName !== 'Alex Sterling' && settings.userName !== 'Alex Morgan' && settings.userName !== 'User Profile'
-    ? settings.userName
-    : userEmail
-    ? userEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    : 'User Profile';
-  const displayEmail = userEmail || (settings.userEmail && settings.userEmail !== 'alex.s@nexuscrm.com' ? settings.userEmail : 'Active Session');
-  const displayRole = settings.userRole || 'Account Executive';
+  const displayName = currentUser?.name || settings.userName || 'User Profile';
+  const displayEmail = currentUser?.email || userEmail || settings.userEmail || 'Active Session';
+  const displayRole = currentUser?.title || settings.userRole || 'Account Executive';
+  const roleBadge = currentUser?.badge || '💼 STAFF';
+  const roleColor = currentUser?.color || theme.primary;
   const avatarInitials = (displayName || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   const quotaProgress = Math.min(
     100,
-    Math.round((metrics.totalRevenue / (settings.salesQuota || 100000)) * 100)
+    Math.round((metrics.totalRevenue / (currentUser?.defaultQuota || settings.salesQuota || 100000)) * 100)
   );
 
   const handleExportCSV = async () => {
@@ -163,14 +162,19 @@ export default function SettingsScreen() {
           {/* User Profile Card */}
           <GlassCard style={styles.card} gradient>
             <View style={styles.profileRow}>
-              <View style={[styles.avatar, { backgroundColor: theme.primary + '25', borderColor: theme.primary }]}>
-                <Text style={[styles.avatarText, { color: theme.primary }]}>
+              <View style={[styles.avatar, { backgroundColor: roleColor + '20', borderColor: roleColor }]}>
+                <Text style={[styles.avatarText, { color: roleColor }]}>
                   {avatarInitials}
                 </Text>
               </View>
               <View style={styles.profileMeta}>
-                <Text style={[styles.userName, { color: theme.text }]}>{displayName}</Text>
-                <Text style={[styles.userRole, { color: theme.primary }]}>{displayRole}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <Text style={[styles.userName, { color: theme.text }]}>{displayName}</Text>
+                  <View style={[styles.roleBadgePill, { borderColor: roleColor + '60', backgroundColor: roleColor + '18' }]}>
+                    <Text style={[styles.roleBadgePillText, { color: roleColor }]}>{roleBadge}</Text>
+                  </View>
+                </View>
+                <Text style={[styles.userRole, { color: roleColor }]}>{displayRole}</Text>
                 <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
                   {displayEmail}
                 </Text>
@@ -182,7 +186,7 @@ export default function SettingsScreen() {
               <View style={styles.quotaHeader}>
                 <Text style={[styles.quotaTitle, { color: theme.textSecondary }]}>QUARTERLY SALES TARGET</Text>
                 <Text style={[styles.quotaVal, { color: theme.text }]}>
-                  {formatCurrency(metrics.totalRevenue)} / {formatCurrency(settings.salesQuota || 100000)}
+                  {formatCurrency(metrics.totalRevenue)} / {formatCurrency(currentUser?.defaultQuota || settings.salesQuota || 100000)}
                 </Text>
               </View>
               <View style={[styles.progressTrack, { backgroundColor: theme.background }]}>
@@ -191,7 +195,7 @@ export default function SettingsScreen() {
                     styles.progressBar,
                     {
                       width: `${quotaProgress}%`,
-                      backgroundColor: quotaProgress >= 80 ? theme.statusWon : theme.primary,
+                      backgroundColor: quotaProgress >= 80 ? theme.statusWon : roleColor,
                     },
                   ]}
                 />
@@ -199,6 +203,63 @@ export default function SettingsScreen() {
               <Text style={[styles.quotaPacing, { color: theme.textSecondary }]}>
                 🎯 {quotaProgress}% achieved • Active Deals: {formatCurrency(metrics.activeDealsValue)}
               </Text>
+            </View>
+          </GlassCard>
+
+          {/* Primary Role Switcher Card */}
+          <GlassCard style={styles.card}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Primary Access Accounts</Text>
+            <Text style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+              Switch workspace identity between Owner, Admin, and Staff roles.
+            </Text>
+
+            <View style={styles.roleSwitchGrid}>
+              {primaryAccounts.map(acc => {
+                const isActive = currentUser?.role === acc.role;
+                return (
+                  <Pressable
+                    key={acc.id}
+                    onPress={async () => {
+                      if (!isActive) {
+                        await loginAsAccount(acc.role);
+                        updateSettings({
+                          userName: acc.name,
+                          userEmail: acc.email,
+                          userRole: acc.title,
+                          salesQuota: acc.defaultQuota,
+                        });
+                      }
+                    }}
+                    style={({ pressed }) => [
+                      styles.roleSwitchBtn,
+                      {
+                        backgroundColor: isActive ? acc.color + '15' : theme.backgroundElement,
+                        borderColor: isActive ? acc.color : theme.border,
+                      },
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <View style={styles.roleSwitchTop}>
+                      <Text style={[styles.roleSwitchBadge, { color: acc.color }]}>{acc.badge}</Text>
+                      {isActive && (
+                        <View style={[styles.activeDot, { backgroundColor: acc.color }]} />
+                      )}
+                    </View>
+                    <Text style={[styles.roleSwitchName, { color: theme.text }]}>{acc.name}</Text>
+                    <Text style={[styles.roleSwitchTitle, { color: theme.textSecondary }]} numberOfLines={1}>
+                      {acc.title}
+                    </Text>
+                    <Text style={[styles.roleSwitchEmail, { color: theme.textSecondary }]} numberOfLines={1}>
+                      {acc.email}
+                    </Text>
+                    <View style={[styles.switchStatusBox, { backgroundColor: isActive ? acc.color : theme.background, borderColor: isActive ? acc.color : theme.border }]}>
+                      <Text style={[styles.switchStatusText, { color: isActive ? '#07090E' : theme.textSecondary }]}>
+                        {isActive ? 'ACTIVE' : 'SWITCH'}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </GlassCard>
 
@@ -443,6 +504,70 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 17,
     fontWeight: '800',
+  },
+  roleBadgePill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  roleBadgePillText: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  roleSwitchGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  roleSwitchBtn: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    justifyContent: 'space-between',
+  },
+  roleSwitchTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  roleSwitchBadge: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  roleSwitchName: {
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  roleSwitchTitle: {
+    fontSize: 10,
+    marginTop: 1,
+  },
+  roleSwitchEmail: {
+    fontSize: 9,
+    marginTop: 2,
+  },
+  switchStatusBox: {
+    marginTop: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switchStatusText: {
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   userRole: {
     fontSize: 11,
